@@ -22,11 +22,10 @@ type CartStore = {
   lines: CartItem[];
 };
 
-function getCartFromCookie(): CartStore {
+async function getCartFromCookie(): Promise<CartStore> {
   try {
-    const raw = require("next/headers")
-      .cookies()
-      .get("cart")?.value;
+    const cookieStore = await cookies();
+    const raw = cookieStore.get("cart")?.value;
     if (raw) return JSON.parse(raw);
   } catch {}
   return { id: `cart_${Date.now()}`, lines: [] };
@@ -67,7 +66,7 @@ export async function createCart(): Promise<Cart> {
 export async function addToCart(
   lines: { merchandiseId: string; quantity: number }[]
 ): Promise<Cart> {
-  const store = getCartFromCookie();
+  const store = await getCartFromCookie();
 
   for (const line of lines) {
     const variant = allProducts
@@ -115,7 +114,7 @@ export async function addToCart(
 }
 
 export async function removeFromCart(lineIds: string[]): Promise<Cart> {
-  const store = getCartFromCookie();
+  const store = await getCartFromCookie();
   store.lines = store.lines.filter((l) => !lineIds.includes(l.id!));
   await setCartCookie(store);
   return cartStoreToCart(store);
@@ -124,7 +123,7 @@ export async function removeFromCart(lineIds: string[]): Promise<Cart> {
 export async function updateCart(
   lines: { id: string; merchandiseId: string; quantity: number }[]
 ): Promise<Cart> {
-  const store = getCartFromCookie();
+  const store = await getCartFromCookie();
 
   for (const update of lines) {
     const line = store.lines.find((l) => l.id === update.id);
